@@ -1,0 +1,6 @@
+struct foo {
+  int loaded_from_weird_system;
+  int calculated_value() { return loaded_from_weird_system; }
+};
+
+FUNSOLATE("int interesting_fun")

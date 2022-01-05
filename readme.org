@@ -1,0 +1,108 @@
+* Funsolator: the Function Isolator
+  
+  Some times you happen to work on some code where it not easy to unit test a function.
+
+  It could be part of a large file where dependencies makes is impossible/hard to compile it in
+  isolation. You may not want to use a /sprout-method/ or in other ways change the target code to be
+  testable, nonetheless you really want to unit test this one function with weird logic that
+  your new shiny code depends on.
+
+  What if you could just have that function isolated so you could test it...
+
+  At times I have wondered where does such a tool exist? And have not found it. Of the Mocking
+  frameworks I have seen they seem to prefer a nice clean interface or at least the ability to
+  compile the file where the code you want under test is.
+  
+  
+** Introducing "The funsolator"
+
+   The goal is to have an easy and brutish way to extract a method, such that it may be tested in
+   isolation.
+
+   The basic idea is to just extract the source-code into a generated file, that is used by the test
+   system. Doing so in a manner such that any changes to the production function is picked up by the
+   build system.
+
+   This relies on a primitive python-script and some CMake magic.
+   
+
+** Example
+
+   Imagine having the file [[./production_code/gnarly_beast.cpp]] where you have an interesting function
+
+#+begin_src c++
+   #include "the_whole_worlld"
+
+
+int interesing_fun(foo bar) {
+    return bar.calculated_value() + 1;
+}
+#+end_src
+
+   You are not allowed to change the production code but on build time you could generate a file from
+   a [[./test_code/tamer.template]]
+
+#+begin_src  c++
+   struct bar {
+      int loaded_from_weird_system;
+      int calculated_value() { return loaded_from_weird_system;}
+   };
+
+   FUNSOLATE("int intersting_fun")
+#+end_src
+
+
+So in your tests [[./test_code/test_beast.cpp]] you could write
+
+#+begin_src c++
+#include "TestFramework.h"
+
+TEST_CASE("blazing a trail") {
+    bar.loaded_from_weird_system = 3;
+    ASSERT(intersting_fun(bar) == 4);
+}
+
+RUN_TESTS
+#+end_src
+
+
+The test would be configured in your [[./test_code/CMakeLists.txt]] with
+
+#+begin_src CMake
+add_custom_command(
+OUTPUT tamed_beast.cpp
+python3 funsolator ${test_code}/tamer.template
+MAIN_DEPENDENCY ${production_code}/gnarly_beast.cpp
+)
+
+add_test(test_beast test_beast.cpp tamed_beast.cpp)
+#+end_src
+
+Now any change to =gnarly_beast.cpp= would generate a new =tamed_beast= and you could gain some
+confidence that the function behaves as expected - and continues to
+
+
+
+** But OMG why not refactor the production code?
+
+   - Sometimes other people maintain code you depend on, it could be a third party library.
+   - The code maybe to gnarly to and you need something to start prying it open.
+   - You just want to see how to code works.
+
+     
+   Often times, especially with C++/C code you can instruct the compiler to compile a piece of code
+   and just keep on adding stub implementations of "stuff you do not care_about" or want to fake the
+   behavior of until the compilation succeeds. T
+
+   The Funsolator is a tool to make this less tedious. With less friction it should lower the entry
+   barrier for adding tests & encourage more granular tests of the =gnarly_beasts.cpp= out there.
+
+
+
+   
+
+ 
+
+
+  
+  
