@@ -3,4 +3,4 @@ struct foo {
   int calculated_value() { return loaded_from_weird_system; }
 };
 
-FUNSOLATE("int interesting_fun")
+FUNSOLATE("int interesting_fun(foo bar)")
