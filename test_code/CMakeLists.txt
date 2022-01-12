@@ -3,12 +3,9 @@ set(beast "${CMAKE_CURRENT_SOURCE_DIR}/../production_code/gnarly_beast.cpp")
 add_custom_command(
   OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/tamed/beast.cpp ${CMAKE_CURRENT_SOURCE_DIR}/tamed/beast.h
   COMMAND  python3 ${CMAKE_CURRENT_SOURCE_DIR}/funsolator.py ${beast} ${CMAKE_CURRENT_SOURCE_DIR}/beast.template 
-  MAIN_DEPENDCY ${CMAKE_CURRENT_SOURCE_DIR}/beast.template
-  DEPENDS ${beast}
+  DEPENDS ${beast} ${CMAKE_CURRENT_SOURCE_DIR}/beast.template
   VERBATIM
 )
-
-
 
 
 function(fun_test name)

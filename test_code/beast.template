@@ -1,6 +1,6 @@
-struct foo {
-  int loaded_from_weird_system;
-  int calculated_value() { return loaded_from_weird_system; }
+struct CustomType {
+  int injected_result;
+  int complex_calculation() { return injected_result; }
 };
 
-FUNSOLATE("int interesting_fun(foo bar)")
+FUNSOLATE("int interesting_fun(CustomType bar)")

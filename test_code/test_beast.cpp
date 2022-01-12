@@ -1,11 +1,15 @@
 #include <tamed/beast.h>
 
-int testcase() {
+#include <stdlib.h>
 
-  foo bar;
+int main(int argc, char *argv[]) {
+  CustomType bar;
 
-  bar.loaded_from_weird_system = 3;
-  return interesting_fun(bar) != 4;
+  bar.injected_result = 3;
+
+  if (interesting_fun(bar) == 4) {
+    return EXIT_SUCCESS;
+  } else {
+    return EXIT_FAILURE;
+  }
 }
-
-int main(int argc, char *argv[]) { return testcase(); }

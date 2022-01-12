@@ -1,6 +1,7 @@
-#include "the_whole_worlld"
+#include "the_whole_world"
 
+/// #ifdef THIS_AND_THAT
 
-int interesting_fun(foo bar) {
-    return bar.calculated_value() + 1;
-}
+/// millions of omitted lines of code
+
+int interesting_fun(CustomType bar) { return bar.complex_calculation() + 1; }

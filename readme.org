@@ -9,97 +9,130 @@
 
   What if you could just have that function isolated so you could test it...
 
-  At times I have wondered where does such a tool exist? And have not found it. Of the Mocking
-  frameworks I have seen they seem to prefer a nice clean interface or at least the ability to
-  compile the file where the code you want under test is.
-  
+  At times I have wondered where does such a tool exist? I have not found it. The Mocking frameworks
+  I have seen they seem to prefer a nice clean interface or at least the ability to compiling a
+  production version the file where the code you want under test is.
   
 ** Introducing "The funsolator"
 
    The goal is to have an easy and brutish way to extract a method, such that it may be tested in
    isolation.
 
-   The basic idea is to just extract the source-code into a generated file, that is used by the test
-   system. Doing so in a manner such that any changes to the production function is picked up by the
+   The basic idea is to extract the source-code into a generated file, that can be used by the
+   tests. Doing so in a manner such that any changes to the production function is picked up by the
    build system.
 
-   This relies on a primitive python-script and some CMake magic.
-   
+   This relies on a [[./test_code/funsolator.py][primitive python-script]] and some CMake magic.
 
 ** Example
 
    Imagine having the file [[./production_code/gnarly_beast.cpp]] where you have an interesting function
 
 #+begin_src c++
-   #include "the_whole_worlld"
+#include "the_whole_world"
 
+/// #ifdef THIS_AND_THAT
 
-int interesing_fun(foo bar) {
-    return bar.calculated_value() + 1;
-}
+/// millions of omitted lines of code
+
+int interesting_fun(CustomType bar) { return bar.complex_calculation() + 1; }
 #+end_src
 
    You are not allowed to change the production code but on build time you could generate a file from
-   a [[./test_code/tamer.template]]
+   a [[./test_code/beast.template]]
 
 #+begin_src  c++
-   struct bar {
-      int loaded_from_weird_system;
-      int calculated_value() { return loaded_from_weird_system;}
-   };
+struct CustomType {
+  int injected_result;
+  int complex_calculation() { return injected_result; }
+};
 
-   FUNSOLATE("int intersting_fun")
+FUNSOLATE("int interesting_fun(CustomType bar)")
 #+end_src
 
 
 So in your tests [[./test_code/test_beast.cpp]] you could write
 
 #+begin_src c++
-#include "TestFramework.h"
+#include <tamed/beast.h>
 
-TEST_CASE("blazing a trail") {
-    bar.loaded_from_weird_system = 3;
-    ASSERT(intersting_fun(bar) == 4);
+#include <stdlib.h>
+
+int main(int argc, char *argv[]) {
+  CustomType bar;
+
+  bar.injected_result = 3;
+
+  if (interesting_fun(bar) == 4) {
+    return EXIT_SUCCESS;
+  } else {
+    return EXIT_FAILURE;
+  }
 }
-
-RUN_TESTS
 #+end_src
 
 
 The test would be configured in your [[./test_code/CMakeLists.txt]] with
 
 #+begin_src CMake
-add_custom_command(
-OUTPUT tamed_beast.cpp
-python3 funsolator ${test_code}/tamer.template
-MAIN_DEPENDENCY ${production_code}/gnarly_beast.cpp
-)
+set(beast "${CMAKE_CURRENT_SOURCE_DIR}/../production_code/gnarly_beast.cpp")
 
-add_test(test_beast test_beast.cpp tamed_beast.cpp)
+add_custom_command(
+  OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/tamed/beast.cpp ${CMAKE_CURRENT_SOURCE_DIR}/tamed/beast.h
+  COMMAND  python3 ${CMAKE_CURRENT_SOURCE_DIR}/funsolator.py ${beast} ${CMAKE_CURRENT_SOURCE_DIR}/beast.template 
+  DEPENDS ${beast} ${CMAKE_CURRENT_SOURCE_DIR}/beast.template
+  VERBATIM
+)
 #+end_src
 
-Now any change to =gnarly_beast.cpp= would generate a new =tamed_beast= and you could gain some
-confidence that the function behaves as expected - and continues to
+Now any change to =gnarly_beast.cpp= would generate a new =tamed/beast.{cpp|h}= pair and you could
+gain some confidence that the function behaves as expected - and continues to.
 
+And changes to your =beast.template= with the definition/inclusion of needed types would also result
+in updates
 
 
 ** But OMG why not refactor the production code?
 
-   - Sometimes other people maintain code you depend on, it could be a third party library.
+   - Sometimes you do not maintain the code you depend on. Think a third party library.
    - The code maybe to gnarly to and you need something to start prying it open.
    - You just want to see how to code works.
 
-     
-   Often times, especially with C++/C code you can instruct the compiler to compile a piece of code
-   and just keep on adding stub implementations of "stuff you do not care_about" or want to fake the
-   behavior of until the compilation succeeds. T
+   Often times, especially with C++/C code, you can instruct the compiler to compile a single file
+   and just keep on adding stub implementations until the compilation succeeds. This can be tedious,
+   almost impossible and a waste of time as you end up needing to maintain the stubs.
 
-   The Funsolator is a tool to make this less tedious. With less friction it should lower the entry
-   barrier for adding tests & encourage more granular tests of the =gnarly_beasts.cpp= out there.
+   The _Funsolator_ could be a tool to make this less tedious. With less friction it lowers the entry
+   barrier for adding tests & encourages more granular tests of the =gnarly_beasts.cpp= out there.
+
+** TODO Improvements
+
+   This is just a toy example - to see if it was possible to do this.
+
+   It turns out it was not /just/ pulling out the function, you also want a header to include, the
+   correct incantations of CMake, ....
+
+   This generated output was added under the source dir =tamed/beast.h=, as it will allow your IDE
+   to pick up the files.
+
+   Any nifty things to add could include:
+
+   - Better cmake functions to add the test
+     - Could it filter on extension, if its =.template= use the =funsolator= (which would
+       probably need to define its "target file" / /the beast/
+     - Turn into a CMake module to hide the functions and scripts
+   - Try to create an example using =Makefiles= ?
+   - Use a real test framework for the example
 
 
+** How to try out the funsolator
 
-   
+#+begin_src sh
+  ~/Projects/funsolator$ cmake -G Ninja -B build .
+  ~/Projects/funsolator$ ninja -C build
+  ~/Projects/funsolator$ ninja -C build test
+#+end_src
+
 
  
 
